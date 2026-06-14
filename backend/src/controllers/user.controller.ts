@@ -104,10 +104,7 @@ export async function deleteUsers(req: Request, res: Response) {
     });
   }
 }
-export async function deleteUnverifiedUsers(
-  req: Request,
-  res: Response
-) {
+export async function deleteUnverifiedUsers(req: Request, res: Response) {
   try {
     await prisma.user.deleteMany({
       where: {

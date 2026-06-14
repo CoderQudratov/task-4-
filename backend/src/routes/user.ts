@@ -18,10 +18,6 @@ router.patch("/block", auth, blockUsers);
 router.patch("/unblock", auth, unblockUsers);
 
 router.delete("/", auth, deleteUsers);
-router.delete(
-  "/delete-unverified",
-  auth,
-  deleteUnverifiedUsers
-);
+router.delete("/delete-unverified", auth, deleteUnverifiedUsers);
 
 export default router;

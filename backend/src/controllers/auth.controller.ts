@@ -83,10 +83,7 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -109,7 +106,7 @@ export async function login(req: Request, res: Response) {
       process.env.JWT_SECRET!,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     await prisma.user.update({
@@ -146,10 +143,7 @@ export async function login(req: Request, res: Response) {
     });
   }
 }
-export async function verifyEmail(
-  req: Request,
-  res: Response
-) {
+export async function verifyEmail(req: Request, res: Response) {
   try {
     const token = req.params.token as string;
 

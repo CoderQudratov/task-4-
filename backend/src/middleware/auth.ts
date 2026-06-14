@@ -5,11 +5,7 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
-export function auth(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) {
+export function auth(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const token = req.cookies.token;
 
@@ -20,10 +16,7 @@ export function auth(
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
 
     req.user = decoded;
 
