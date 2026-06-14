@@ -104,3 +104,25 @@ export async function deleteUsers(req: Request, res: Response) {
     });
   }
 }
+export async function deleteUnverifiedUsers(
+  req: Request,
+  res: Response
+) {
+  try {
+    await prisma.user.deleteMany({
+      where: {
+        status: "UNVERIFIED",
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: "Unverified users deleted",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+}
