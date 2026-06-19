@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import prisma from "../../prisma/lib/prisma";
+import prisma from "../lib/prisma";
 
 export async function getUsers(req: Request, res: Response) {
   try {

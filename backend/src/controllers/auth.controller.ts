@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
-import prisma from "../../prisma/lib/prisma";
+import prisma from "../lib/prisma";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
@@ -100,11 +100,12 @@ export async function login(req: Request, res: Response) {
       });
     }
 
+    const expiresIn = (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"];
     const token = jwt.sign(
       { userId: user.id },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET as string,
       // NOTE: expiry comes from env so it can be changed without code changes
-      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" },
+      { expiresIn },
     );
 
     await prisma.user.update({
@@ -197,8 +198,9 @@ export async function verifyEmail(req: Request, res: Response) {
   try {
     const { token } = req.params;
 
+    const confirmToken = Array.isArray(token) ? token[0] : token;
     const user = await prisma.user.findFirst({
-      where: { confirmToken: token },
+      where: { confirmToken },
     });
 
     // IMPORTANT: Token not found means invalid or already used (cleared on verify)
