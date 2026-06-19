@@ -1,16 +1,12 @@
-import { useState } from 'react'
-import { Button } from 'react-bootstrap';
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-  <>
-  <div className="p-4">
-    <Button variant='primary'>Hello</Button>
-  </div>
-  </>
-  )
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
