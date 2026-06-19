@@ -6,6 +6,7 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { Status } from "@prisma/client";
 import { sendVerificationEmail } from "../services/email.service";
+import type { AuthRequest } from "../middleware/auth";
 export async function register(req: Request, res: Response) {
   console.log("REGISTER IS CALLED");
   console.log(req.body);
@@ -100,13 +101,10 @@ export async function login(req: Request, res: Response) {
     }
 
     const token = jwt.sign(
-      {
-        userId: user.id,
-      },
+      { userId: user.id },
       process.env.JWT_SECRET!,
-      {
-        expiresIn: "7d",
-      },
+      // NOTE: expiry comes from env so it can be changed without code changes
+      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" },
     );
 
     await prisma.user.update({
@@ -143,36 +141,101 @@ export async function login(req: Request, res: Response) {
     });
   }
 }
-export async function verifyEmail(req: Request, res: Response) {
+// NOTE: Called by ProtectedRoute on every protected page mount to validate the session.
+// Returns the current user or 401/403 so the frontend knows what to do.
+export async function me(req: AuthRequest, res: Response) {
   try {
-    const token = req.params.token as string;
+    const userId = req.user.userId;
 
-    const user = await prisma.user.findFirst({
-      where: {
-        confirmToken: token,
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        confirmToken: true,
+        lastLogin: true,
+        createdAt: true,
       },
     });
 
+    // IMPORTANT: User could have been deleted after the JWT was issued
     if (!user) {
-      return res.status(404).send("Invalid token");
+      return res.status(401).json({ success: false, message: "User not found" });
     }
 
-    if (user.status !== Status.BLOCKED) {
-      await prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          status: Status.ACTIVE,
-          confirmToken: null,
-        },
+    // IMPORTANT: Blocked users must not be allowed through — return 403
+    if (user.status === Status.BLOCKED) {
+      return res.status(403).json({ success: false, message: "Your account has been blocked" });
+    }
+
+    // NOTE: confirmToken === null means the user verified their email
+    const { confirmToken, ...userFields } = user;
+
+    return res.json({
+      success: true,
+      user: { ...userFields, isVerified: confirmToken === null },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+}
+
+// NOTE: Clears the httpOnly cookie. Frontend also clears localStorage.
+export async function logout(req: Request, res: Response) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
+
+  return res.json({ success: true, message: "Logged out successfully" });
+}
+
+export async function verifyEmail(req: Request, res: Response) {
+  try {
+    const { token } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: { confirmToken: token },
+    });
+
+    // IMPORTANT: Token not found means invalid or already used (cleared on verify)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid or expired verification link. If you already verified your email, try signing in.",
       });
     }
 
-    return res.send("Email verified successfully");
-  } catch (error) {
-    console.log(error);
+    // IMPORTANT: Blocked users must NOT be activated through email verification.
+    // An admin must unblock them first.
+    if (user.status === Status.BLOCKED) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is blocked. Email verification is not possible. Contact an administrator.",
+      });
+    }
 
-    return res.status(500).send("Internal Server Error");
+    // NOTE: Only UNVERIFIED users can be activated. Activate and clear the token.
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        status: Status.ACTIVE,
+        confirmToken: null,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: "Email verified successfully! You can now sign in.",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 }

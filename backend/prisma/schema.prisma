@@ -8,14 +8,16 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  password      String
-  status        Status    @default(UNVERIFIED)
-  lastLogin     DateTime?
-  createdAt     DateTime  @default(now())
-  confirmToken  String?
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  password       String
+  status         Status    @default(UNVERIFIED)
+  // NOTE: Saved before blocking so unblock can restore the exact previous state
+  previousStatus Status?
+  lastLogin      DateTime?
+  createdAt      DateTime  @default(now())
+  confirmToken   String?
 }
 
 enum Status {
