@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 
-// NOTE: Transporter is created once at startup using env vars
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -9,7 +8,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendVerificationEmail(email: string, token: string): Promise<void> {
+export async function sendVerificationEmail(
+  email: string,
+  token: string,
+): Promise<void> {
   const link = `${process.env.APP_BASE_URL}/verify/${token}`;
 
   await transporter.sendMail({

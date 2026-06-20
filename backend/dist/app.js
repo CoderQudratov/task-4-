@@ -11,7 +11,6 @@ const user_1 = __importDefault(require("./routes/user"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    // NOTE: Use CLIENT_URL env so the allowed origin is never hardcoded
     origin: process.env.CLIENT_URL,
     credentials: true,
 }));

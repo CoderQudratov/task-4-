@@ -33,7 +33,7 @@ export async function register(req: Request, res: Response) {
       console.log("Email send error:", err);
     }
     return res.status(201).json({
-      succsess: true,
+      success: true,
       message: "Registration successful",
       user: {
         id: user.id,
@@ -100,7 +100,8 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    const expiresIn = (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"];
+    const expiresIn = (process.env.JWT_EXPIRES_IN ||
+      "7d") as jwt.SignOptions["expiresIn"];
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET as string,
@@ -120,19 +121,17 @@ export async function login(req: Request, res: Response) {
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
       httpOnly: true,
-      // IMPORTANT: secure must be true in production (HTTPS only).
-      // With secure: false the browser rejects the cookie on HTTPS origins.
+
       secure: isProduction,
-      // IMPORTANT: sameSite must be "none" for cross-origin (Vercel → Render).
-      // "lax" blocks cross-site POST cookie delivery — the cookie is set but
-      // never sent back on subsequent requests from a different origin.
+
       sameSite: isProduction ? "none" : "lax",
-      // IMPORTANT: without maxAge the cookie is a session cookie and dies
-      // when the tab closes. Give it the same lifetime as the JWT itself.
+
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    console.log(`[login] success — userId=${user.id} env=${process.env.NODE_ENV}`);
+    console.log(
+      `[login] success — userId=${user.id} env=${process.env.NODE_ENV}`,
+    );
 
     return res.json({
       success: true,
@@ -153,8 +152,7 @@ export async function login(req: Request, res: Response) {
     });
   }
 }
-// NOTE: Called by ProtectedRoute on every protected page mount to validate the session.
-// Returns the current user or 401/403 so the frontend knows what to do.
+
 export async function me(req: AuthRequest, res: Response) {
   try {
     const userId = req.user.userId;
@@ -174,15 +172,17 @@ export async function me(req: AuthRequest, res: Response) {
 
     // IMPORTANT: User could have been deleted after the JWT was issued
     if (!user) {
-      return res.status(401).json({ success: false, message: "User not found" });
+      return res
+        .status(401)
+        .json({ success: false, message: "User not found" });
     }
 
-    // IMPORTANT: Blocked users must not be allowed through — return 403
     if (user.status === Status.BLOCKED) {
-      return res.status(403).json({ success: false, message: "Your account has been blocked" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Your account has been blocked" });
     }
 
-    // NOTE: confirmToken === null means the user verified their email
     const { confirmToken, ...userFields } = user;
 
     return res.json({
@@ -190,15 +190,15 @@ export async function me(req: AuthRequest, res: Response) {
       user: { ...userFields, isVerified: confirmToken === null },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 }
 
-// NOTE: Clears the httpOnly cookie. Frontend also clears localStorage.
 export async function logout(_req: Request, res: Response) {
   const isProduction = process.env.NODE_ENV === "production";
-  // IMPORTANT: clearCookie options must exactly match the set options,
-  // otherwise the browser treats them as different cookies and ignores the clear.
+
   res.clearCookie("token", {
     httpOnly: true,
     secure: isProduction,
@@ -221,7 +221,8 @@ export async function verifyEmail(req: Request, res: Response) {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Invalid or expired verification link. If you already verified your email, try signing in.",
+        message:
+          "Invalid or expired verification link. If you already verified your email, try signing in.",
       });
     }
 
@@ -230,11 +231,11 @@ export async function verifyEmail(req: Request, res: Response) {
     if (user.status === Status.BLOCKED) {
       return res.status(403).json({
         success: false,
-        message: "Your account is blocked. Email verification is not possible. Contact an administrator.",
+        message:
+          "Your account is blocked. Email verification is not possible. Contact an administrator.",
       });
     }
 
-    // NOTE: Only UNVERIFIED users can be activated. Activate and clear the token.
     await prisma.user.update({
       where: { id: user.id },
       data: {
