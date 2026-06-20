@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { Status } from "@prisma/client";
-import { sendVerificationEmail } from "../services/email.service";
+import { getVerifyUrl } from "../services/email.service";
 import type { AuthRequest } from "../middleware/auth";
 export async function register(req: Request, res: Response) {
   console.log("[register] started", { email: req.body?.email });
@@ -31,19 +31,12 @@ export async function register(req: Request, res: Response) {
 
     console.log("[register] user created", { userId: user.id, email: user.email });
 
-    // Fire-and-forget: email failure must NEVER block or fail the registration response
-    console.log("[register] email sending started", { userId: user.id });
-    sendVerificationEmail(user.email, confirmToken).then((result) => {
-      if (result.success) {
-        console.log("[register] email sent success", { userId: user.id });
-      } else {
-        console.error("[register] email failed", { userId: user.id, error: result.error });
-      }
-    });
+    const verifyUrl = getVerifyUrl(confirmToken);
 
     return res.status(201).json({
       success: true,
-      message: "Registration successful",
+      message: "Registration successful. Click button below to verify email.",
+      verifyUrl,
       user: {
         id: user.id,
         name: user.name,

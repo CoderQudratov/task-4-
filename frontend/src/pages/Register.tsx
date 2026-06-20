@@ -28,6 +28,7 @@ function Register() {
   const [serverError, setServerError] = useState("");
   const [agree, setAgree] = useState(false);
   const [agreeError, setAgreeError] = useState("");
+  const [verifyUrl, setVerifyUrl] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -84,15 +85,19 @@ function Register() {
     };
 
     try {
-      await registerUser(data);
-      navigate("/login", {
-        replace: true,
-        state: {
-          message:
-            "Registration successful! Please verify your email, then sign in.",
-          type: "success",
-        },
-      });
+      const result = await registerUser(data);
+      if (result.verifyUrl) {
+        setVerifyUrl(result.verifyUrl);
+      } else {
+        navigate("/login", {
+          replace: true,
+          state: {
+            message:
+              "Registration successful! Please verify your email, then sign in.",
+            type: "success",
+          },
+        });
+      }
     } catch (error: any) {
       setServerError(
         error?.response?.data?.message ||
@@ -187,15 +192,29 @@ function Register() {
               </button>
             </form>
 
-            <div className="text-center mt-4">
-              <span className="text-secondary">Already have an account?</span>
-              <Link
-                to="/login"
-                className="text-decoration-none fw-semibold ms-2"
-              >
-                Sign In
-              </Link>
-            </div>
+            {verifyUrl ? (
+              <div className="mt-4 text-center">
+                <p className="text-success fw-semibold">
+                  Registration successful. Click button below to verify email.
+                </p>
+                <a
+                  href={verifyUrl}
+                  className="btn btn-success w-100"
+                >
+                  Click This Button to Verify Email
+                </a>
+              </div>
+            ) : (
+              <div className="text-center mt-4">
+                <span className="text-secondary">Already have an account?</span>
+                <Link
+                  to="/login"
+                  className="text-decoration-none fw-semibold ms-2"
+                >
+                  Sign In
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
