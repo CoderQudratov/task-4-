@@ -1,37 +1,30 @@
-import nodemailer from "nodemailer";
-import dns from "dns";
+import { Resend } from "resend";
 
-dns.setDefaultResultOrder("ipv4first");
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  requireTLS: true,
-
-  auth: {
-    user: process.env.EMAIL_USER as string,
-    pass: process.env.EMAIL_PASS as string,
-  },
-
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
+// Resend uses HTTPS (port 443) — no SMTP, no IPv6 socket issues on Render.
+// Gmail SMTP was failing with ENETUNREACH on IPv6 addresses.
+// Lazy singleton: defers construction until first use so that RESEND_API_KEY
+// can be set via env after module load (tests, dotenv, etc.).
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) throw new Error("RESEND_API_KEY env var is not set");
+    _resend = new Resend(key);
+  }
+  return _resend;
+}
 
 export interface EmailResult {
   success: boolean;
   error?: string;
 }
 
-async function attemptSend(
-  email: string,
-  token: string
-): Promise<void> {
+async function attemptSend(email: string, token: string): Promise<void> {
   const link = `${process.env.APP_BASE_URL}/verify/${token}`;
+  const from = process.env.EMAIL_FROM ?? "noreply@example.com";
 
-  await transporter.sendMail({
-    from: `"User Management" <${process.env.EMAIL_FROM}>`,
+  const { error } = await getResend().emails.send({
+    from: `User Management <${from}>`,
     to: email,
     subject: "Verify your email",
     html: `
@@ -50,6 +43,10 @@ async function attemptSend(
       </a>
     `,
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function sendVerificationEmail(
@@ -68,30 +65,20 @@ export async function sendVerificationEmail(
 
       return { success: true };
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : String(err);
+      const message = err instanceof Error ? err.message : String(err);
 
       console.error(
-        `[email] SMTP error to=${email} attempt=${attempt}/${MAX_RETRIES} error="${message}"`
+        `[email] Resend error to=${email} attempt=${attempt}/${MAX_RETRIES} error="${message}"`
       );
 
       if (attempt < MAX_RETRIES) {
         const delay = 1000 * Math.pow(2, attempt - 1);
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, delay)
-        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
-        return {
-          success: false,
-          error: message,
-        };
+        return { success: false, error: message };
       }
     }
   }
 
-  return {
-    success: false,
-    error: "Unknown error",
-  };
+  return { success: false, error: "Unknown error" };
 }
