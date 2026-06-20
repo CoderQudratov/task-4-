@@ -1,17 +1,20 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
 
-// Singleton transporter — created once at module load, never per-request
+dns.setDefaultResultOrder("ipv4first");
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10_000,  // 10s to establish TCP connection
-  greetingTimeout: 10_000,    // 10s to receive SMTP greeting
-  socketTimeout: 15_000,      // 15s of inactivity before socket is killed
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 export interface EmailResult {
@@ -19,10 +22,7 @@ export interface EmailResult {
   error?: string;
 }
 
-async function attemptSend(
-  email: string,
-  token: string,
-): Promise<void> {
+async function attemptSend(email: string, token: string): Promise<void> {
   const link = `${process.env.APP_BASE_URL}/verify/${token}`;
 
   await transporter.sendMail({
@@ -37,10 +37,6 @@ async function attemptSend(
   });
 }
 
-/**
- * Sends a verification email with up to 3 attempts and exponential backoff.
- * Never throws — always returns a structured result.
- */
 export async function sendVerificationEmail(
   email: string,
   token: string,
@@ -54,12 +50,12 @@ export async function sendVerificationEmail(
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+
       console.error(
         `[email] SMTP error to=${email} attempt=${attempt}/${MAX_RETRIES} error="${message}"`,
       );
 
       if (attempt < MAX_RETRIES) {
-        // Exponential backoff: 1s, 2s, 4s …
         const delay = 1000 * Math.pow(2, attempt - 1);
         await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
@@ -68,6 +64,5 @@ export async function sendVerificationEmail(
     }
   }
 
-  // Unreachable, but satisfies TypeScript
   return { success: false, error: "Unknown error" };
 }
