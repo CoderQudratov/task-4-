@@ -16,8 +16,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_2 = require("@prisma/client");
 const email_service_1 = require("../services/email.service");
 async function register(req, res) {
-    console.log("REGISTER IS CALLED");
-    console.log(req.body);
+    console.log("[register] started", { email: req.body?.email });
     try {
         const { name, email, password } = req.body;
         if (!name || !email || !password) {
@@ -35,14 +34,19 @@ async function register(req, res) {
                 confirmToken,
             },
         });
-        try {
-            await (0, email_service_1.sendVerificationEmail)(user.email, confirmToken);
-        }
-        catch (err) {
-            console.log("Email send error:", err);
-        }
+        console.log("[register] user created", { userId: user.id, email: user.email });
+        // Fire-and-forget: email failure must NEVER block or fail the registration response
+        console.log("[register] email sending started", { userId: user.id });
+        (0, email_service_1.sendVerificationEmail)(user.email, confirmToken).then((result) => {
+            if (result.success) {
+                console.log("[register] email sent success", { userId: user.id });
+            }
+            else {
+                console.error("[register] email failed", { userId: user.id, error: result.error });
+            }
+        });
         return res.status(201).json({
-            succsess: true,
+            success: true,
             message: "Registration successful",
             user: {
                 id: user.id,
@@ -60,7 +64,7 @@ async function register(req, res) {
                 message: "Email already exists",
             });
         }
-        console.log(error);
+        console.error("[register] unexpected error", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -100,7 +104,8 @@ async function login(req, res) {
                 message: "Your account is blocked",
             });
         }
-        const expiresIn = (process.env.JWT_EXPIRES_IN || "7d");
+        const expiresIn = (process.env.JWT_EXPIRES_IN ||
+            "7d");
         const token = jsonwebtoken_1.default.sign({ userId: user.id }, process.env.JWT_SECRET, 
         // NOTE: expiry comes from env so it can be changed without code changes
         { expiresIn });
@@ -115,15 +120,8 @@ async function login(req, res) {
         const isProduction = process.env.NODE_ENV === "production";
         res.cookie("token", token, {
             httpOnly: true,
-            // IMPORTANT: secure must be true in production (HTTPS only).
-            // With secure: false the browser rejects the cookie on HTTPS origins.
             secure: isProduction,
-            // IMPORTANT: sameSite must be "none" for cross-origin (Vercel → Render).
-            // "lax" blocks cross-site POST cookie delivery — the cookie is set but
-            // never sent back on subsequent requests from a different origin.
             sameSite: isProduction ? "none" : "lax",
-            // IMPORTANT: without maxAge the cookie is a session cookie and dies
-            // when the tab closes. Give it the same lifetime as the JWT itself.
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         console.log(`[login] success — userId=${user.id} env=${process.env.NODE_ENV}`);
@@ -146,8 +144,6 @@ async function login(req, res) {
         });
     }
 }
-// NOTE: Called by ProtectedRoute on every protected page mount to validate the session.
-// Returns the current user or 401/403 so the frontend knows what to do.
 async function me(req, res) {
     try {
         const userId = req.user.userId;
@@ -165,13 +161,15 @@ async function me(req, res) {
         });
         // IMPORTANT: User could have been deleted after the JWT was issued
         if (!user) {
-            return res.status(401).json({ success: false, message: "User not found" });
+            return res
+                .status(401)
+                .json({ success: false, message: "User not found" });
         }
-        // IMPORTANT: Blocked users must not be allowed through — return 403
         if (user.status === client_2.Status.BLOCKED) {
-            return res.status(403).json({ success: false, message: "Your account has been blocked" });
+            return res
+                .status(403)
+                .json({ success: false, message: "Your account has been blocked" });
         }
-        // NOTE: confirmToken === null means the user verified their email
         const { confirmToken, ...userFields } = user;
         return res.json({
             success: true,
@@ -179,14 +177,13 @@ async function me(req, res) {
         });
     }
     catch (error) {
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
+        return res
+            .status(500)
+            .json({ success: false, message: "Internal Server Error" });
     }
 }
-// NOTE: Clears the httpOnly cookie. Frontend also clears localStorage.
 async function logout(_req, res) {
     const isProduction = process.env.NODE_ENV === "production";
-    // IMPORTANT: clearCookie options must exactly match the set options,
-    // otherwise the browser treats them as different cookies and ignores the clear.
     res.clearCookie("token", {
         httpOnly: true,
         secure: isProduction,
@@ -216,7 +213,6 @@ async function verifyEmail(req, res) {
                 message: "Your account is blocked. Email verification is not possible. Contact an administrator.",
             });
         }
-        // NOTE: Only UNVERIFIED users can be activated. Activate and clear the token.
         await prisma_1.default.user.update({
             where: { id: user.id },
             data: {

@@ -18,13 +18,11 @@ async function getUsers(req, res) {
                 name: true,
                 email: true,
                 status: true,
-                // NOTE: confirmToken needed to compute isVerified — not exposed in response
                 confirmToken: true,
                 lastLogin: true,
                 createdAt: true,
             },
         });
-        // Strip confirmToken from response and compute isVerified
         const result = users.map(({ confirmToken, ...user }) => ({
             ...user,
             isVerified: confirmToken === null,
@@ -41,8 +39,6 @@ async function getUsers(req, res) {
 async function blockUsers(req, res) {
     try {
         const { ids } = req.body;
-        // IMPORTANT: Save each user's current status into previousStatus before blocking.
-        // This allows unblock to restore the exact status (ACTIVE or UNVERIFIED).
         const users = await prisma_1.default.user.findMany({
             where: { id: { in: ids } },
             select: { id: true, status: true },
@@ -66,8 +62,6 @@ async function blockUsers(req, res) {
 async function unblockUsers(req, res) {
     try {
         const { ids } = req.body;
-        // NOTE: Read previousStatus to restore what the user was before being blocked.
-        // Falls back to ACTIVE if previousStatus was never saved (e.g. old records).
         const users = await prisma_1.default.user.findMany({
             where: { id: { in: ids } },
             select: { id: true, previousStatus: true },

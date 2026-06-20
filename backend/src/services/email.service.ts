@@ -9,15 +9,11 @@ const transporter = nodemailer.createTransport({
   secure: false,
   requireTLS: true,
 
-  // FORCE IPv4 (Render IPv6 issue fix)
-  family: 4,
-
   auth: {
     user: process.env.EMAIL_USER as string,
     pass: process.env.EMAIL_PASS as string,
   },
 
-  // Timeouts
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 15000,
@@ -42,7 +38,14 @@ async function attemptSend(
       <h2>Welcome to User Management</h2>
       <p>Please verify your email:</p>
       <a href="${link}"
-         style="display:inline-block;padding:10px 20px;background:#0d6efd;color:white;text-decoration:none;border-radius:4px;">
+         style="
+           display:inline-block;
+           padding:10px 20px;
+           background:#0d6efd;
+           color:white;
+           text-decoration:none;
+           border-radius:4px;
+         ">
          Verify Email
       </a>
     `,
