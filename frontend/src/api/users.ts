@@ -1,7 +1,6 @@
 import api from "./axios";
 import type { User } from "../types/user";
 
-// NOTE: Backend returns { success, users: User[] } — extract the array here
 export const getUsers = async (): Promise<User[]> => {
   const response = await api.get<{ success: boolean; users: User[] }>("/users");
   return response.data.users;
@@ -32,9 +31,7 @@ export const deleteUsers = async (ids: string[]) => {
 };
 
 export const deleteUnverifiedUsers = async () => {
-  const response = await api.delete(
-    "/users/delete-unverified"
-  );
+  const response = await api.delete("/users/delete-unverified");
 
   return response.data;
 };

@@ -88,19 +88,22 @@ function Register() {
       navigate("/login", {
         replace: true,
         state: {
-          message: "Registration successful! Please verify your email, then sign in.",
+          message:
+            "Registration successful! Please verify your email, then sign in.",
           type: "success",
         },
       });
     } catch (error: any) {
-      setServerError(error?.response?.data?.message || "Registration failed. Please try again.");
+      setServerError(
+        error?.response?.data?.message ||
+          "Registration failed. Please try again.",
+      );
     }
   };
 
   return (
     <div className="container-fluid">
       <div className="row min-vh-100">
-
         {/* Auth Form */}
         <div className="col-lg-5 d-flex justify-content-center align-items-center py-5 py-lg-0">
           <div className="w-100 px-3 px-sm-4" style={{ maxWidth: "440px" }}>
@@ -174,7 +177,9 @@ function Register() {
               )}
 
               {serverError && (
-                <small className="text-danger d-block mb-2">{serverError}</small>
+                <small className="text-danger d-block mb-2">
+                  {serverError}
+                </small>
               )}
 
               <button type="submit" className="btn btn-primary w-100 mt-2">
@@ -184,7 +189,10 @@ function Register() {
 
             <div className="text-center mt-4">
               <span className="text-secondary">Already have an account?</span>
-              <Link to="/login" className="text-decoration-none fw-semibold ms-2">
+              <Link
+                to="/login"
+                className="text-decoration-none fw-semibold ms-2"
+              >
                 Sign In
               </Link>
             </div>
@@ -200,7 +208,6 @@ function Register() {
             style={{ maxHeight: "85vh", objectFit: "cover" }}
           />
         </div>
-
       </div>
     </div>
   );

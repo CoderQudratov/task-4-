@@ -117,11 +117,22 @@ export async function login(req: Request, res: Response) {
       },
     });
 
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      // IMPORTANT: secure must be true in production (HTTPS only).
+      // With secure: false the browser rejects the cookie on HTTPS origins.
+      secure: isProduction,
+      // IMPORTANT: sameSite must be "none" for cross-origin (Vercel → Render).
+      // "lax" blocks cross-site POST cookie delivery — the cookie is set but
+      // never sent back on subsequent requests from a different origin.
+      sameSite: isProduction ? "none" : "lax",
+      // IMPORTANT: without maxAge the cookie is a session cookie and dies
+      // when the tab closes. Give it the same lifetime as the JWT itself.
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
+    console.log(`[login] success — userId=${user.id} env=${process.env.NODE_ENV}`);
 
     return res.json({
       success: true,
@@ -184,11 +195,14 @@ export async function me(req: AuthRequest, res: Response) {
 }
 
 // NOTE: Clears the httpOnly cookie. Frontend also clears localStorage.
-export async function logout(req: Request, res: Response) {
+export async function logout(_req: Request, res: Response) {
+  const isProduction = process.env.NODE_ENV === "production";
+  // IMPORTANT: clearCookie options must exactly match the set options,
+  // otherwise the browser treats them as different cookies and ignores the clear.
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   });
 
   return res.json({ success: true, message: "Logged out successfully" });

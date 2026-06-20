@@ -8,7 +8,6 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
 
-// IMPORTANT: auth middleware validates the JWT cookie before me() runs
 router.get("/me", auth, me);
 
 router.get("/verify/:token", verifyEmail);

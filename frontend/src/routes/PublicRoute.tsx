@@ -9,7 +9,9 @@ interface PublicRouteProps {
 }
 
 function PublicRoute({ children }: PublicRouteProps) {
-  const [status, setStatus] = useState<"loading" | "authenticated" | "unauthenticated">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "authenticated" | "unauthenticated"
+  >("loading");
 
   useEffect(() => {
     getMe()

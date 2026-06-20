@@ -40,25 +40,25 @@ function Dashboard() {
 
   return (
     <>
-    <Navbar />
-    <div className="container-fluid px-2 px-md-4 py-2 py-md-0">
-      {/* Page header */}
-      <div className="py-3 mb-1 border-bottom">
-        <h5 className="mb-0 fw-semibold">Users</h5>
+      <Navbar />
+      <div className="container-fluid px-2 px-md-4 py-2 py-md-0">
+        {/* Page header */}
+        <div className="py-3 mb-1 border-bottom">
+          <h5 className="mb-0 fw-semibold">Users</h5>
+        </div>
+
+        <Toolbar
+          selectedIds={selectedIds}
+          onActionComplete={fetchUsers}
+          onClearSelection={() => setSelectedIds([])}
+        />
+
+        <UserTable
+          users={users}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+        />
       </div>
-
-      <Toolbar
-        selectedIds={selectedIds}
-        onActionComplete={fetchUsers}
-        onClearSelection={() => setSelectedIds([])}
-      />
-
-      <UserTable
-        users={users}
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-      />
-    </div>
     </>
   );
 }

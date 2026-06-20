@@ -10,8 +10,6 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  // IMPORTANT: Link points to the FRONTEND /verify page, not the backend API.
-  // The frontend Verify page reads the token from the URL, then calls GET /auth/verify/:token.
   const link = `${process.env.APP_BASE_URL}/verify/${token}`;
 
   await transporter.sendMail({

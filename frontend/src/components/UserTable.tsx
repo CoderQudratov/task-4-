@@ -139,7 +139,9 @@ function UserTable({ users, selectedIds, onSelectionChange }: UserTableProps) {
                       onChange={() => handleToggle(user.id)}
                     />
                     <div className="flex-fill" style={{ minWidth: 0 }}>
-                      <div className="fw-semibold text-truncate">{user.name}</div>
+                      <div className="fw-semibold text-truncate">
+                        {user.name}
+                      </div>
                       <div
                         className="text-muted text-truncate"
                         style={{ fontSize: "0.82rem" }}
@@ -151,7 +153,9 @@ function UserTable({ users, selectedIds, onSelectionChange }: UserTableProps) {
                       <div className="mt-1 d-flex flex-wrap gap-1">
                         <span
                           className={`badge px-2 py-1 ${
-                            user.status === "ACTIVE" ? "bg-success" : "bg-danger"
+                            user.status === "ACTIVE"
+                              ? "bg-success"
+                              : "bg-danger"
                           }`}
                           style={{ fontSize: "0.72rem" }}
                         >

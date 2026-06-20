@@ -18,7 +18,10 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const state = location.state as { message?: string; type?: "warning" | "success" } | null;
+  const state = location.state as {
+    message?: string;
+    type?: "warning" | "success";
+  } | null;
   const redirectMessage = state?.message ?? "";
   const redirectType = state?.type ?? "warning";
 
@@ -77,7 +80,6 @@ function Login() {
   return (
     <div className="container-fluid">
       <div className="row min-vh-100">
-
         {/* Auth Form */}
         <div className="col-lg-5 d-flex justify-content-center align-items-center py-5 py-lg-0">
           <div className="w-100 px-3 px-sm-4" style={{ maxWidth: "440px" }}>
@@ -85,7 +87,10 @@ function Login() {
             <p className="text-secondary mb-4">Sign in to your account</p>
 
             {redirectMessage && (
-              <div className={`alert alert-${redirectType} py-2 mb-4`} role="alert">
+              <div
+                className={`alert alert-${redirectType} py-2 mb-4`}
+                role="alert"
+              >
                 {redirectMessage}
               </div>
             )}
@@ -163,7 +168,6 @@ function Login() {
             style={{ maxHeight: "85vh", objectFit: "cover" }}
           />
         </div>
-
       </div>
     </div>
   );

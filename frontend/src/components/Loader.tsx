@@ -1,4 +1,3 @@
-// NOTE: Used by ProtectedRoute and PublicRoute while waiting for GET /auth/me response
 function Loader() {
   return (
     <div className="d-flex justify-content-center align-items-center vh-100">

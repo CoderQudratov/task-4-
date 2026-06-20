@@ -26,7 +26,11 @@ interface SelfCheck {
   check: (me: { id: string; status: string }) => boolean;
 }
 
-function Toolbar({ selectedIds, onActionComplete, onClearSelection }: ToolbarProps) {
+function Toolbar({
+  selectedIds,
+  onActionComplete,
+  onClearSelection,
+}: ToolbarProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +54,7 @@ function Toolbar({ selectedIds, onActionComplete, onClearSelection }: ToolbarPro
   const runAction = async (
     action: () => Promise<unknown>,
     successMsg: string,
-    selfCheck?: SelfCheck
+    selfCheck?: SelfCheck,
   ) => {
     setLoading(true);
     try {
@@ -88,14 +92,14 @@ function Toolbar({ selectedIds, onActionComplete, onClearSelection }: ToolbarPro
       {
         message: "Your account was blocked.",
         check: (me) => selectedIds.includes(me.id),
-      }
+      },
     );
   };
 
   const handleUnblock = () => {
     runAction(
       () => unblockUsers(selectedIds),
-      `${count} user${count > 1 ? "s" : ""} unblocked.`
+      `${count} user${count > 1 ? "s" : ""} unblocked.`,
     );
   };
 
@@ -106,19 +110,15 @@ function Toolbar({ selectedIds, onActionComplete, onClearSelection }: ToolbarPro
       {
         message: "Your account was deleted.",
         check: (me) => selectedIds.includes(me.id),
-      }
+      },
     );
   };
 
   const handleDeleteUnverified = () => {
-    runAction(
-      () => deleteUnverifiedUsers(),
-      "All unverified users deleted.",
-      {
-        message: "Your account was deleted.",
-        check: (me) => me.status === "UNVERIFIED",
-      }
-    );
+    runAction(() => deleteUnverifiedUsers(), "All unverified users deleted.", {
+      message: "Your account was deleted.",
+      check: (me) => me.status === "UNVERIFIED",
+    });
   };
 
   return (
@@ -164,7 +164,10 @@ function Toolbar({ selectedIds, onActionComplete, onClearSelection }: ToolbarPro
 
           {/* Selection count indicator */}
           {hasSelection && (
-            <span className="text-muted ms-sm-2" style={{ fontSize: "0.875rem" }}>
+            <span
+              className="text-muted ms-sm-2"
+              style={{ fontSize: "0.875rem" }}
+            >
               {count} selected
             </span>
           )}
@@ -177,7 +180,10 @@ function Toolbar({ selectedIds, onActionComplete, onClearSelection }: ToolbarPro
                 role="status"
                 aria-hidden="true"
               />
-              <span className="text-muted ms-1" style={{ fontSize: "0.875rem" }}>
+              <span
+                className="text-muted ms-1"
+                style={{ fontSize: "0.875rem" }}
+              >
                 Processing...
               </span>
             </span>
