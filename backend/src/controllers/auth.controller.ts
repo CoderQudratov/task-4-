@@ -8,8 +8,7 @@ import { Status } from "@prisma/client";
 import { sendVerificationEmail } from "../services/email.service";
 import type { AuthRequest } from "../middleware/auth";
 export async function register(req: Request, res: Response) {
-  console.log("REGISTER IS CALLED");
-  console.log(req.body);
+  console.log("[register] started", { email: req.body?.email });
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -17,8 +16,10 @@ export async function register(req: Request, res: Response) {
         message: "All fields are required",
       });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const confirmToken = crypto.randomUUID();
+
     const user = await prisma.user.create({
       data: {
         name,
@@ -27,11 +28,19 @@ export async function register(req: Request, res: Response) {
         confirmToken,
       },
     });
-    try {
-      await sendVerificationEmail(user.email, confirmToken);
-    } catch (err) {
-      console.log("Email send error:", err);
-    }
+
+    console.log("[register] user created", { userId: user.id, email: user.email });
+
+    // Fire-and-forget: email failure must NEVER block or fail the registration response
+    console.log("[register] email sending started", { userId: user.id });
+    sendVerificationEmail(user.email, confirmToken).then((result) => {
+      if (result.success) {
+        console.log("[register] email sent success", { userId: user.id });
+      } else {
+        console.error("[register] email failed", { userId: user.id, error: result.error });
+      }
+    });
+
     return res.status(201).json({
       success: true,
       message: "Registration successful",
@@ -52,7 +61,7 @@ export async function register(req: Request, res: Response) {
         message: "Email already exists",
       });
     }
-    console.log(error);
+    console.error("[register] unexpected error", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
