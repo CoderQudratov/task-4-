@@ -8,10 +8,16 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   requireTLS: true,
+
+  // FORCE IPv4 (Render IPv6 issue fix)
+  family: 4,
+
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.EMAIL_USER as string,
+    pass: process.env.EMAIL_PASS as string,
   },
+
+  // Timeouts
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 15000,
@@ -22,7 +28,10 @@ export interface EmailResult {
   error?: string;
 }
 
-async function attemptSend(email: string, token: string): Promise<void> {
+async function attemptSend(
+  email: string,
+  token: string
+): Promise<void> {
   const link = `${process.env.APP_BASE_URL}/verify/${token}`;
 
   await transporter.sendMail({
@@ -32,37 +41,54 @@ async function attemptSend(email: string, token: string): Promise<void> {
     html: `
       <h2>Welcome to User Management</h2>
       <p>Please verify your email:</p>
-      <a href="${link}">Verify Email</a>
+      <a href="${link}"
+         style="display:inline-block;padding:10px 20px;background:#0d6efd;color:white;text-decoration:none;border-radius:4px;">
+         Verify Email
+      </a>
     `,
   });
 }
 
 export async function sendVerificationEmail(
   email: string,
-  token: string,
+  token: string
 ): Promise<EmailResult> {
   const MAX_RETRIES = 3;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       await attemptSend(email, token);
-      console.log(`[email] sent successfully to=${email} attempt=${attempt}`);
+
+      console.log(
+        `[email] sent successfully to=${email} attempt=${attempt}`
+      );
+
       return { success: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message =
+        err instanceof Error ? err.message : String(err);
 
       console.error(
-        `[email] SMTP error to=${email} attempt=${attempt}/${MAX_RETRIES} error="${message}"`,
+        `[email] SMTP error to=${email} attempt=${attempt}/${MAX_RETRIES} error="${message}"`
       );
 
       if (attempt < MAX_RETRIES) {
         const delay = 1000 * Math.pow(2, attempt - 1);
-        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, delay)
+        );
       } else {
-        return { success: false, error: message };
+        return {
+          success: false,
+          error: message,
+        };
       }
     }
   }
 
-  return { success: false, error: "Unknown error" };
+  return {
+    success: false,
+    error: "Unknown error",
+  };
 }
