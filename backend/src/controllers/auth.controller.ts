@@ -27,11 +27,11 @@ export async function register(req: Request, res: Response) {
         confirmToken,
       },
     });
-    try {
-      await sendVerificationEmail(user.email, confirmToken);
-    } catch (err) {
-      console.log("Email send error:", err);
-    }
+    // try {
+    //   await sendVerificationEmail(user.email, confirmToken);
+    // } catch (err) {
+    //   console.log("Email send error:", err);
+    // }
     return res.status(201).json({
       success: true,
       message: "Registration successful",
