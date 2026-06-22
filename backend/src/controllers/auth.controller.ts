@@ -120,14 +120,13 @@ export async function login(req: Request, res: Response) {
       },
     });
 
-    const isProduction = process.env.NODE_ENV === "production";
+    const crossOrigin =
+      process.env.NODE_ENV === "production" ||
+      (!!process.env.CLIENT_URL && process.env.CLIENT_URL.startsWith("https"));
     res.cookie("token", token, {
       httpOnly: true,
-
-      secure: isProduction,
-
-      sameSite: isProduction ? "none" : "lax",
-
+      secure: crossOrigin,
+      sameSite: crossOrigin ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -199,12 +198,14 @@ export async function me(req: AuthRequest, res: Response) {
 }
 
 export async function logout(_req: Request, res: Response) {
-  const isProduction = process.env.NODE_ENV === "production";
+  const crossOrigin =
+    process.env.NODE_ENV === "production" ||
+    (!!process.env.CLIENT_URL && process.env.CLIENT_URL.startsWith("https"));
 
   res.clearCookie("token", {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    secure: crossOrigin,
+    sameSite: crossOrigin ? "none" : "lax",
   });
 
   return res.json({ success: true, message: "Logged out successfully" });
