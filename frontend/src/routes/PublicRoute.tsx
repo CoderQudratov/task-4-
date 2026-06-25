@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getMe } from "../api/auth";
-import { saveUser } from "../utils/authStore";
+import { getStoredUser, saveUser, clearUser } from "../utils/authStore";
 import Loader from "../components/Loader";
 
 interface PublicRouteProps {
@@ -11,17 +11,28 @@ interface PublicRouteProps {
 function PublicRoute({ children }: PublicRouteProps) {
   const [status, setStatus] = useState<
     "loading" | "authenticated" | "unauthenticated"
-  >("loading");
+  >(() => (getStoredUser() ? "authenticated" : "loading"));
 
   useEffect(() => {
+    let cancelled = false;
+
     getMe()
       .then((user) => {
-        saveUser(user);
-        setStatus("authenticated");
+        if (!cancelled) {
+          saveUser(user);
+          setStatus("authenticated");
+        }
       })
       .catch(() => {
-        setStatus("unauthenticated");
+        if (!cancelled) {
+          clearUser();
+          setStatus("unauthenticated");
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (status === "loading") return <Loader />;
